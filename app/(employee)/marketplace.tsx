@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, ScrollView, View } from 'react-native';
 
+import { PulseIcon } from '@/components/ui/PulseIcon';
 import { PerkCard } from '@/components/PerkCard';
 import { AppText, CategoryChip, Screen } from '@/components/ui';
 import { strings } from '@/i18n/strings';
@@ -49,17 +50,24 @@ export default function MarketplaceScreen() {
 
   return (
     <Screen padded={false}>
-      <View style={{ paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, gap: Spacing.xxs, marginBottom: Spacing.sm }}>
-        <AppText variant="title" color={Colors.teal}>{strings.marketplace.title}</AppText>
-        <AppText variant="body" color={Colors.textSecondary}>
-          {strings.marketplace.subtitle}
-        </AppText>
+      <View style={{  flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
+    marginBottom: Spacing.sm, }}>
+        <PulseIcon size={32} />
+        <AppText variant="title" color={Colors.teal} style={{marginLeft: Spacing.sm}}>{strings.marketplace.title}</AppText>
       </View>
 
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: Spacing.lg, padding: Spacing.lg }}>
+        contentContainerStyle={{  alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
+    marginBottom: Spacing.sm,  }}>
         <CategoryChip label={strings.marketplace.allCategory} selected={selectedCategory === 'all'} onPress={() => setSelectedCategory('all')} />
         {CATEGORIES.map((category) => (
           <CategoryChip

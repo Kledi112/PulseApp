@@ -1,0 +1,31 @@
+Starting project at C:\Users\User\Desktop\Pulse-App
+React Compiler enabled
+Starting Metro Bundler
+Waiting on http://localhost:8090
+Logs for your project will appear below.
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ node_modules\expo-router\node\render.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 3252ms node_modules\expo-router\node\render.js (1211 modules)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1200/1200)
+Web Bundled 4145ms node_modules\expo-router\entry.js (1200 modules)
+Error: Cannot pipe to a closed or destroyed stream
+    at pipelineImpl (node:internal/streams/pipeline:264:15)
+    at node:stream/promises:31:5
+    at new Promise (<anonymous>)
+    at pipeline (node:stream/promises:20:10)
+    at respond (C:\Users\User\Desktop\Pulse-App\node_modules\expo-server\src\vendor\http.ts:138:19)
+    at C:\Users\User\Desktop\Pulse-App\node_modules\expo-server\src\vendor\http.ts:68:13
+λ Bundled 36ms node_modules\expo-router\node\render.js (1 module)
+Web Bundled 793ms node_modules\expo-router\entry.js (1 module)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 68ms node_modules\expo-router\node\render.js (1 module)
+Web Bundled 823ms node_modules\expo-router\entry.js (1 module)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓░░░░░░░░░░ 38.5% (21/34)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓░░░░░░░░░░ 43.4% (38/78)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 43.8% (273/432)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 58.8% (466/650)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 74.6% (793/927)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 94.8% (1125/1159)
+Web Bundled 22019ms node_modules\expo-router\entry.js (1201 modules)

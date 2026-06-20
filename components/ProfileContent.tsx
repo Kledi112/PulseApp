@@ -28,9 +28,9 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
   useFocusEffect(
     useCallback(() => {
       if (!user || !showHistory) return;
-      getClaimedPerks(user.id).then(setHistory);
-      getPendingServices(user.id).then(setPending);
-      getActivePerks(user.id).then(setActive);
+      getClaimedPerks(user.id).then(setHistory).catch(() => setHistory([]));
+      getPendingServices(user.id).then(setPending).catch(() => setPending([]));
+      getActivePerks(user.id).then(setActive).catch(() => setActive([]));
     }, [user, showHistory])
   );
 

@@ -39,11 +39,16 @@ export default function PaymentScreen() {
     if (Object.keys(validationErrors).length > 0 || !requestId) return;
 
     setProcessing(true);
-    await approveRequest(requestId, method);
-    setProcessing(false);
-    Alert.alert('Payment confirmed', 'The benefit has been routed to the provider.', [
-      { text: 'Done', onPress: () => router.back() },
-    ]);
+    try {
+      await approveRequest(requestId, method);
+      Alert.alert('Payment confirmed', 'The benefit has been routed to the provider.', [
+        { text: 'Done', onPress: () => router.back() },
+      ]);
+    } catch {
+      Alert.alert('Payment failed', 'Could not reach the backend. Check your connection and try again.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (

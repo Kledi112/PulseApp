@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { ConnectionErrorModal } from '@/components/ConnectionErrorModal';
 import { Colors } from '@/theme';
 
 export const unstable_settings = {
@@ -18,6 +19,7 @@ export default function RootLayout() {
         <Stack.Screen name="(manager)" />
       </Stack>
       <StatusBar style="light" />
+      <ConnectionErrorModal />
     </ThemeProvider>
   );
 }

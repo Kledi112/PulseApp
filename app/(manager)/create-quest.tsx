@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 
 import { AppText, Button, Input, Screen } from '@/components/ui';
 import { createQuest } from '@/services/quests';
@@ -37,9 +37,14 @@ export default function CreateQuestScreen() {
     if (Object.keys(validationErrors).length > 0) return;
 
     setSubmitting(true);
-    await createQuest({ title, description, reward, type, deadline });
-    setSubmitting(false);
-    router.back();
+    try {
+      await createQuest({ title, description, reward, type, deadline });
+      router.back();
+    } catch {
+      Alert.alert('Could not create quest', 'Could not reach the backend. Check your connection and try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

@@ -15,10 +15,15 @@ export default function ActiveRequestsScreen() {
 
   const load = useCallback(() => {
     setLoading(true);
-    getActiveRequests().then((result) => {
-      setRequests(result);
-      setLoading(false);
-    });
+    getActiveRequests()
+      .then((result) => {
+        setRequests(result);
+        setLoading(false);
+      })
+      .catch(() => {
+        setRequests([]);
+        setLoading(false);
+      });
   }, []);
 
   useFocusEffect(
@@ -34,8 +39,12 @@ export default function ActiveRequestsScreen() {
         text: 'Decline',
         style: 'destructive',
         onPress: async () => {
-          await declineRequest(id);
-          load();
+          try {
+            await declineRequest(id);
+            load();
+          } catch {
+            Alert.alert('Could not decline request', 'Could not reach the backend. Check your connection and try again.');
+          }
         },
       },
     ]);

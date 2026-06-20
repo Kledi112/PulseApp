@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, View } from 'react-native';
 
 import { AppText, Button, Input, Screen } from '@/components/ui';
 import { strings } from '@/i18n/strings';
@@ -46,9 +46,14 @@ export default function RegisterBusinessScreen() {
     if (Object.keys(validationErrors).length > 0) return;
 
     setSubmitting(true);
-    await submitBusinessApplication(form);
-    setSubmitting(false);
-    router.replace('/(auth)/application-success');
+    try {
+      await submitBusinessApplication(form);
+      router.replace('/(auth)/application-success');
+    } catch {
+      Alert.alert('Could not submit application', 'Could not reach the backend. Check your connection and try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 
 import { AppText, Button, Card, Screen } from '@/components/ui';
 import { getEntriesForQuest, getQuests, selectQuestWinner } from '@/services/quests';
@@ -13,15 +13,20 @@ export default function QuestManagementScreen() {
   const [expandedQuestId, setExpandedQuestId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const result = await getQuests();
-    setQuests(result);
-    const awaiting = result.filter((quest) => quest.status === 'awaiting_winner');
-    const entries = await Promise.all(awaiting.map((quest) => getEntriesForQuest(quest.id)));
-    const map: Record<string, QuestEntry[]> = {};
-    awaiting.forEach((quest, index) => {
-      map[quest.id] = entries[index];
-    });
-    setEntriesByQuest(map);
+    try {
+      const result = await getQuests();
+      setQuests(result);
+      const awaiting = result.filter((quest) => quest.status === 'awaiting_winner');
+      const entries = await Promise.all(awaiting.map((quest) => getEntriesForQuest(quest.id)));
+      const map: Record<string, QuestEntry[]> = {};
+      awaiting.forEach((quest, index) => {
+        map[quest.id] = entries[index];
+      });
+      setEntriesByQuest(map);
+    } catch {
+      setQuests([]);
+      setEntriesByQuest({});
+    }
   }, []);
 
   useFocusEffect(
@@ -31,9 +36,13 @@ export default function QuestManagementScreen() {
   );
 
   const handleSelectWinner = async (questId: string, entry: QuestEntry) => {
-    await selectQuestWinner(questId, entry.participantId, entry.participantName);
-    setExpandedQuestId(null);
-    load();
+    try {
+      await selectQuestWinner(questId, entry.participantId, entry.participantName, entry.mode);
+      setExpandedQuestId(null);
+      load();
+    } catch {
+      Alert.alert('Could not select winner', 'Could not reach the backend. Check your connection and try again.');
+    }
   };
 
   const awaitingWinner = quests.filter((quest) => quest.status === 'awaiting_winner');

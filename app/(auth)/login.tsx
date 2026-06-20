@@ -1,37 +1,60 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, View } from 'react-native';
 
 import { AppText, Button, Input, Screen } from '@/components/ui';
-import { demoEmployee } from '@/data/users';
 import { strings } from '@/i18n/strings';
+import { loginWithCredentials } from '@/services/auth';
 import { useAuthStore } from '@/store/auth-store';
 import { Colors, Spacing } from '@/theme';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const signIn = useAuthStore((state) => state.signIn);
   const signInAsDemoEmployee = useAuthStore((state) => state.signInAsDemoEmployee);
   const signInAsDemoManager = useAuthStore((state) => state.signInAsDemoManager);
 
   const canSubmit = email.trim().length > 0 && password.trim().length > 0;
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     if (!canSubmit) return;
-    signIn({ ...demoEmployee, email: email.trim() });
-    router.replace('/(employee)/marketplace');
+    setSubmitting(true);
+    try {
+      const user = await loginWithCredentials(email.trim(), password);
+      signIn(user);
+      router.replace(user.role === 'manager' ? '/(manager)/(tabs)/requests' : '/(employee)/marketplace');
+    } catch {
+      Alert.alert('Sign in failed', 'Check your email and password and try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleDemoEmployee = () => {
-    signInAsDemoEmployee();
-    router.replace('/(employee)/marketplace');
+  const handleDemoEmployee = async () => {
+    setSubmitting(true);
+    try {
+      await signInAsDemoEmployee();
+      router.replace('/(employee)/marketplace');
+    } catch {
+      // No alert here - api-client.ts already shows the global connection-error modal.
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleDemoManager = () => {
-    signInAsDemoManager();
-    router.replace('/(manager)/(tabs)/requests');
+  const handleDemoManager = async () => {
+    setSubmitting(true);
+    try {
+      await signInAsDemoManager();
+      router.replace('/(manager)/(tabs)/requests');
+    } catch {
+      // No alert here - api-client.ts already shows the global connection-error modal.
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -56,7 +79,7 @@ export default function LoginScreen() {
         <View style={{ marginTop: Spacing.xxl, gap: Spacing.md }}>
           <Input label={strings.auth.emailPlaceholder} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="name@company.com" />
           <Input label={strings.auth.passwordPlaceholder} value={password} onChangeText={setPassword} secureTextEntry placeholder="••••••••" />
-          <Button label={strings.auth.signIn} onPress={handleSignIn} disabled={!canSubmit} style={{ marginTop: Spacing.xs }} />
+          <Button label={strings.auth.signIn} onPress={handleSignIn} disabled={!canSubmit} loading={submitting} style={{ marginTop: Spacing.xs }} />
         </View>
 
         <View style={{ marginTop: Spacing.xxl, gap: Spacing.sm }}>
@@ -67,8 +90,8 @@ export default function LoginScreen() {
             </AppText>
             <View style={{ flex: 1, height: 1, backgroundColor: Colors.border }} />
           </View>
-          <Button label={strings.auth.demoEmployee} variant="secondary" onPress={handleDemoEmployee} />
-          <Button label={strings.auth.demoManager} variant="secondary" onPress={handleDemoManager} />
+          <Button label={strings.auth.demoEmployee} variant="secondary" onPress={handleDemoEmployee} loading={submitting} />
+          <Button label={strings.auth.demoManager} variant="secondary" onPress={handleDemoManager} loading={submitting} />
         </View>
 
         <View style={{ flex: 1, minHeight: Spacing.xxl }} />

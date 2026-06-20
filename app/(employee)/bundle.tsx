@@ -24,16 +24,21 @@ export default function BundleScreen() {
   const handleRequestBundle = async () => {
     if (!user || items.length === 0) return;
     setSubmitting(true);
-    await submitRequest({
-      employeeId: user.id,
-      employeeName: user.name,
-      type: 'bundle',
-      items: requestItems,
-      totalAll,
-    });
-    setSubmitting(false);
-    clear();
-    Alert.alert(strings.marketplace.requestSent, strings.marketplace.requestSentBody);
+    try {
+      await submitRequest({
+        employeeId: user.id,
+        employeeName: user.name,
+        type: 'bundle',
+        items: requestItems,
+        totalAll,
+      });
+      clear();
+      Alert.alert(strings.marketplace.requestSent, strings.marketplace.requestSentBody);
+    } catch {
+      Alert.alert('Request failed', 'Could not reach the backend. Check your connection and try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (items.length === 0) {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 
 import { EnterQuestButton } from '@/components/EnterQuestButton';
 import { AppText, Card, Screen } from '@/components/ui';
@@ -24,8 +24,12 @@ export default function QuestsScreen() {
   const [modeByQuest, setModeByQuest] = useState<Record<string, QuestEntryMode>>({});
 
   useEffect(() => {
-    getQuests().then((result) => setQuests(result.filter((quest) => quest.status === 'active')));
-    getLeaderboard().then(setLeaderboard);
+    getQuests()
+      .then((result) => setQuests(result.filter((quest) => quest.status === 'active')))
+      .catch(() => setQuests([]));
+    getLeaderboard()
+      .then(setLeaderboard)
+      .catch(() => setLeaderboard([]));
   }, []);
 
   const handleEnter = async (quest: Quest) => {
@@ -33,14 +37,19 @@ export default function QuestsScreen() {
     const mode: QuestEntryMode = quest.type === 'individual' ? 'individual' : quest.type === 'team' ? 'team' : modeByQuest[quest.id] ?? 'individual';
 
     setSubmittingQuestId(quest.id);
-    await enterQuest({
-      questId: quest.id,
-      participantId: mode === 'team' ? user.teamId ?? user.id : user.id,
-      participantName: mode === 'team' ? user.teamName ?? user.name : user.name,
-      mode,
-    });
-    setSubmittingQuestId(null);
-    setEnteredQuestIds((prev) => new Set(prev).add(quest.id));
+    try {
+      await enterQuest({
+        questId: quest.id,
+        participantId: mode === 'team' ? user.teamId ?? user.id : user.id,
+        participantName: mode === 'team' ? user.teamName ?? user.name : user.name,
+        mode,
+      });
+      setEnteredQuestIds((prev) => new Set(prev).add(quest.id));
+    } catch {
+      Alert.alert('Could not enter quest', 'Could not reach the backend. Check your connection and try again.');
+    } finally {
+      setSubmittingQuestId(null);
+    }
   };
 
   const teamLeaderboard = leaderboard.filter((entry) => entry.type === 'team' && entry.period === 'quarter');

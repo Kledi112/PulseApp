@@ -1,9 +1,14 @@
 import { BusinessApplication } from '@/types';
 
-import { delay } from './mock-delay';
+import { api } from './api-client';
 
 export async function submitBusinessApplication(payload: BusinessApplication): Promise<{ success: true }> {
-  // TODO: wire to backend / email (e.g. EmailJS or API endpoint) to forward this application to the Pulse operations team.
-  console.log('[submitBusinessApplication] payload ready for backend:', payload);
-  return delay({ success: true as const }, 600);
+  await api.post('/business-applications', {
+    business_name: payload.businessName,
+    nipt: payload.nipt,
+    employee_count: Number(payload.employeeCount),
+    contact_number: payload.contactNumber,
+    email: payload.email,
+  });
+  return { success: true as const };
 }

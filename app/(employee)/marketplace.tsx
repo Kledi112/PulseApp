@@ -25,12 +25,19 @@ export default function MarketplaceScreen() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    getPerksByCategory(selectedCategory).then((result) => {
-      if (active) {
-        setPerks(result);
-        setLoading(false);
-      }
-    });
+    getPerksByCategory(selectedCategory)
+      .then((result) => {
+        if (active) {
+          setPerks(result);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPerks([]);
+          setLoading(false);
+        }
+      });
     return () => {
       active = false;
     };
@@ -38,14 +45,18 @@ export default function MarketplaceScreen() {
 
   const handleRequest = async (perk: Perk) => {
     if (!user) return;
-    await submitRequest({
-      employeeId: user.id,
-      employeeName: user.name,
-      type: 'single',
-      items: [{ perkId: perk.id, title: perk.title, providerName: perk.providerName, originalPriceAll: perk.priceAll, discountedPriceAll: perk.priceAll }],
-      totalAll: perk.priceAll,
-    });
-    Alert.alert(strings.marketplace.requestSent, strings.marketplace.requestSentBody);
+    try {
+      await submitRequest({
+        employeeId: user.id,
+        employeeName: user.name,
+        type: 'single',
+        items: [{ perkId: perk.id, title: perk.title, providerName: perk.providerName, originalPriceAll: perk.priceAll, discountedPriceAll: perk.priceAll }],
+        totalAll: perk.priceAll,
+      });
+      Alert.alert(strings.marketplace.requestSent, strings.marketplace.requestSentBody);
+    } catch {
+      Alert.alert('Request failed', 'Could not reach the backend. Check your connection and try again.');
+    }
   };
 
   return (

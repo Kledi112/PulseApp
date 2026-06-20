@@ -34,6 +34,7 @@ const MAPPING = {
   'cart.fill': 'shopping-cart',
   'star.fill': 'star',
   'creditcard.fill': 'credit-card',
+  'exclamationmark.triangle.fill': 'warning',
 } as IconMapping;
 
 /**

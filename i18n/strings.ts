@@ -53,6 +53,10 @@ export const strings = {
   },
   profile: {
     title: 'Profile',
+    pendingTitle: 'Pending approval',
+    emptyPending: 'No perks pending approval',
+    activeTitle: 'Active perks',
+    emptyActive: 'No active perks yet',
     historyTitle: 'Claimed perks',
     emptyHistory: 'No claimed perks yet',
     editPhoto: 'Change photo',

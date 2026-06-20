@@ -1,13 +1,15 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 
 import { AppText, Button, Card, Input, Screen } from '@/components/ui';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { ActiveService } from '@/data/active-services';
 import { ClaimedPerk } from '@/data/claimed-perks';
 import { strings } from '@/i18n/strings';
+import { getActivePerks, getPendingServices } from '@/services/active-services';
 import { getClaimedPerks } from '@/services/requests';
 import { useAuthStore } from '@/store/auth-store';
 import { Colors, Radii, Spacing } from '@/theme';
@@ -20,11 +22,17 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
   const [name, setName] = useState(user?.name ?? '');
   const [password, setPassword] = useState('');
   const [history, setHistory] = useState<ClaimedPerk[]>([]);
+  const [pending, setPending] = useState<ActiveService[]>([]);
+  const [active, setActive] = useState<ActiveService[]>([]);
 
-  useEffect(() => {
-    if (!user || !showHistory) return;
-    getClaimedPerks(user.id).then(setHistory);
-  }, [user, showHistory]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!user || !showHistory) return;
+      getClaimedPerks(user.id).then(setHistory);
+      getPendingServices(user.id).then(setPending);
+      getActivePerks(user.id).then(setActive);
+    }, [user, showHistory])
+  );
 
   if (!user) return null;
 
@@ -98,6 +106,64 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
         <Input label="New password" value={password} onChangeText={setPassword} secureTextEntry placeholder="Leave blank to keep current" />
         <Button label={strings.common.save} variant="secondary" onPress={handleSave} />
       </View>
+
+      {showHistory && (
+        <View style={{ marginTop: Spacing.xl, gap: Spacing.sm }}>
+          <AppText variant="subtitle">{strings.profile.pendingTitle}</AppText>
+          {pending.length === 0 ? (
+            <AppText variant="body" color={Colors.textSecondary}>
+              {strings.profile.emptyPending}
+            </AppText>
+          ) : (
+            pending.map((service) => (
+              <Card key={service.id}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View style={{ gap: Spacing.xxs, flex: 1 }}>
+                    <AppText variant="label" numberOfLines={1}>
+                      {service.title}
+                    </AppText>
+                    <AppText variant="caption" color={Colors.textTertiary}>
+                      {service.providerName}
+                    </AppText>
+                  </View>
+                  <AppText variant="label" color={Colors.teal}>
+                    {formatCurrency(service.priceAll)}
+                  </AppText>
+                </View>
+              </Card>
+            ))
+          )}
+        </View>
+      )}
+
+      {showHistory && (
+        <View style={{ marginTop: Spacing.xl, gap: Spacing.sm }}>
+          <AppText variant="subtitle">{strings.profile.activeTitle}</AppText>
+          {active.length === 0 ? (
+            <AppText variant="body" color={Colors.textSecondary}>
+              {strings.profile.emptyActive}
+            </AppText>
+          ) : (
+            active.map((service) => (
+              <Card key={service.id}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View style={{ gap: Spacing.xxs, flex: 1 }}>
+                    <AppText variant="label" numberOfLines={1}>
+                      {service.title}
+                    </AppText>
+                    <AppText variant="caption" color={Colors.textTertiary}>
+                      {service.providerName}
+                    </AppText>
+                  </View>
+                  <AppText variant="label" color={Colors.teal}>
+                    {formatCurrency(service.priceAll)}
+                  </AppText>
+                </View>
+              </Card>
+            ))
+          )}
+        </View>
+      )}
 
       {showHistory && (
         <View style={{ marginTop: Spacing.xl, gap: Spacing.sm }}>

@@ -1,3 +1,4 @@
+import { activeServices } from '@/data/active-services';
 import { claimedPerks } from '@/data/claimed-perks';
 import { requests } from '@/data/requests';
 import { Request, RequestItem } from '@/types';
@@ -23,6 +24,20 @@ export async function submitRequest(payload: SubmitRequestPayload): Promise<Requ
     createdAt: new Date().toISOString(),
   };
   requests.unshift(request);
+
+  request.items.forEach((item) => {
+    activeServices.unshift({
+      id: `service-${item.perkId}-${request.id}`,
+      employeeId: request.employeeId,
+      requestId: request.id,
+      title: item.title,
+      providerName: item.providerName,
+      priceAll: item.discountedPriceAll,
+      status: 'pending',
+      requestedAt: request.createdAt,
+    });
+  });
+
   return delay(request);
 }
 
@@ -54,6 +69,12 @@ export async function approveRequest(requestId: string, paymentMethod: PaymentMe
     });
   });
 
+  activeServices
+    .filter((service) => service.requestId === request.id)
+    .forEach((service) => {
+      service.status = 'active';
+    });
+
   return delay(request);
 }
 
@@ -61,6 +82,13 @@ export async function declineRequest(requestId: string): Promise<Request> {
   const request = requests.find((item) => item.id === requestId);
   if (!request) throw new Error('Request not found');
   request.status = 'declined';
+
+  for (let i = activeServices.length - 1; i >= 0; i -= 1) {
+    if (activeServices[i].requestId === request.id) {
+      activeServices.splice(i, 1);
+    }
+  }
+
   return delay(request);
 }
 

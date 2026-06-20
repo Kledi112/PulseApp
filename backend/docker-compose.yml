@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: perx
       POSTGRES_DB: perx
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - perx_postgres_data:/var/lib/postgresql/data
     healthcheck:

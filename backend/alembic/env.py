@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.core.config import settings
 from app.db.base import Base
-from app.models import Employee, Employer, Perk, Redemption  # noqa: F401 ensures metadata is populated
+from app.models import ActiveService, Business, Employee, Quest, RedeemedHistory, Service  # noqa: F401 ensures metadata is populated
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

@@ -19,7 +19,7 @@ export default function EmployeeTabLayout() {
       }}>
       <Tabs.Screen
         name="marketplace"
-        options={{ title: 'Marketplace', tabBarIcon: ({ color }) => <IconSymbol name="house.fill" color={color} size={24} /> }}
+        options={{ title: 'Home', tabBarIcon: ({ color }) => <IconSymbol name="house.fill" color={color} size={24} /> }}
       />
       <Tabs.Screen
         name="bundle"

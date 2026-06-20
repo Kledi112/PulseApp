@@ -35,7 +35,7 @@ export const strings = {
     cta: 'Back to login',
   },
   marketplace: {
-    title: 'Marketplace',
+    title: 'Pulse App',
     subtitle: 'Pick a perk and put it to use',
     allCategory: 'All',
     requestSent: 'Request sent',

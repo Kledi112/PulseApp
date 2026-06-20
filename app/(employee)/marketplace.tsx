@@ -49,8 +49,8 @@ export default function MarketplaceScreen() {
 
   return (
     <Screen padded={false}>
-      <View style={{ paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, gap: Spacing.xxs }}>
-        <AppText variant="title">{strings.marketplace.title}</AppText>
+      <View style={{ paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, gap: Spacing.xxs, marginBottom: Spacing.sm }}>
+        <AppText variant="title" color={Colors.teal}>{strings.marketplace.title}</AppText>
         <AppText variant="body" color={Colors.textSecondary}>
           {strings.marketplace.subtitle}
         </AppText>
@@ -59,8 +59,7 @@ export default function MarketplaceScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginTop: Spacing.md }}
-        contentContainerStyle={{ paddingHorizontal: Spacing.lg }}>
+        contentContainerStyle={{ paddingHorizontal: Spacing.lg, padding: Spacing.lg }}>
         <CategoryChip label={strings.marketplace.allCategory} selected={selectedCategory === 'all'} onPress={() => setSelectedCategory('all')} />
         {CATEGORIES.map((category) => (
           <CategoryChip

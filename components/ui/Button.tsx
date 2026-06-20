@@ -18,6 +18,7 @@ type ButtonProps = {
   loading?: boolean;
   style?: ViewStyle;
   fullWidth?: boolean;
+  textColor?: string; // NEW
 };
 
 const sizeStyles: Record<ButtonSize, { paddingVertical: number; fontSize: number }> = {
@@ -37,6 +38,7 @@ export function Button({
   loading = false,
   style,
   fullWidth = true,
+  textColor
 }: ButtonProps) {
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -50,16 +52,16 @@ export function Button({
     scale.value = withTiming(1, { duration: 100 });
   };
 
-  const content = loading ? (
-    <ActivityIndicator color={variant === 'primary' ? Colors.background : Colors.teal} />
-  ) : (
-    <AppText
-      variant="label"
-      color={variant === 'primary' ? Colors.background : variant === 'danger' ? Colors.error : Colors.textPrimary}
-      style={{ fontSize, fontFamily: Typography.fontFamily }}>
-      {label}
-    </AppText>
-  );
+ const content = loading ? (
+  <ActivityIndicator color={variant === 'primary' ? Colors.background : Colors.teal} />
+) : (
+  <AppText
+    variant="label"
+    color={textColor ?? (variant === 'primary' ? Colors.background : variant === 'danger' ? Colors.error : Colors.textPrimary)}
+    style={{ fontSize, fontFamily: Typography.fontFamily }}>
+    {label}
+  </AppText>
+);
 
   if (variant === 'primary') {
     return (

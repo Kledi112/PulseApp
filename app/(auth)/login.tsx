@@ -3,6 +3,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, View } from 'react-native';
 
+
+import { PulseIcon } from '@/components/ui/PulseIcon';
 import { AppText, Button, Input, Screen } from '@/components/ui';
 import { strings } from '@/i18n/strings';
 import { loginWithCredentials } from '@/services/auth';
@@ -61,17 +63,12 @@ export default function LoginScreen() {
     <Screen scroll>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={{ paddingTop: Spacing.huge, alignItems: 'center', gap: Spacing.xs }}>
-          <LinearGradient
-            colors={Colors.gradient.brand}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ width: 56, height: 56, borderRadius: 18 }}
-          />
-          <AppText variant="label" color={Colors.textTertiary} style={{ marginTop: Spacing.sm, letterSpacing: 1 }}>
+          <PulseIcon size={64}/>
+          <AppText variant="label" color={Colors.mint} style={{ marginTop: Spacing.sm, letterSpacing: 1, fontSize: Spacing.lg }}>
             {strings.common.appName}
           </AppText>
-          <AppText variant="title">{strings.auth.title}</AppText>
-          <AppText variant="body" color={Colors.textSecondary}>
+          <AppText variant="title" style={{fontSize: Spacing.xxl}}>{strings.auth.title}</AppText>
+          <AppText variant="body" color={Colors.textSecondary} style={{fontSize: Spacing.sm}}>
             {strings.auth.subtitle}
           </AppText>
         </View>
@@ -96,12 +93,13 @@ export default function LoginScreen() {
 
         <View style={{ flex: 1, minHeight: Spacing.xxl }} />
 
-        <View style={{ alignItems: 'center', paddingBottom: Spacing.lg }}>
+        <View style={{ alignItems: 'center', paddingBottom: Spacing.lg}}>
           <Button
             label={strings.auth.registerBusiness}
             variant="ghost"
             fullWidth={false}
-            onPress={() => router.push('/(auth)/register-business')}
+            textColor={`${Colors.mint}99`}
+             onPress={() => router.push('/(auth)/register-business')}
           />
         </View>
       </KeyboardAvoidingView>

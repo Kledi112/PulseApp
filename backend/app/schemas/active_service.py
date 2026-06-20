@@ -1,8 +1,6 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict
-
-
-class ActiveServiceCreate(BaseModel):
-    service_id: int
 
 
 class ActiveServiceOut(BaseModel):
@@ -10,5 +8,10 @@ class ActiveServiceOut(BaseModel):
 
     id: int
     employee_id: int
+    request_id: int
     service_id: int
+    title: str
+    provider_name: str
+    price_all: int
     status: str
+    requested_at: datetime

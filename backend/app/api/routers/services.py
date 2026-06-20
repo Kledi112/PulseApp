@@ -12,10 +12,14 @@ router = APIRouter(prefix="/services", tags=["services"])
 
 @router.get("", response_model=list[ServiceOut])
 def list_services(
+    category: str | None = None,
     db: Session = Depends(get_db),
     current_employee: Employee = Depends(get_current_employee),
 ):
-    return db.query(Service).filter(Service.active.is_(True)).all()
+    query = db.query(Service).filter(Service.active.is_(True))
+    if category:
+        query = query.filter(Service.category == category)
+    return query.all()
 
 
 @router.get("/{service_id}", response_model=ServiceOut)

@@ -4,16 +4,15 @@ from pydantic import BaseModel, EmailStr
 
 
 class RegisterRequest(BaseModel):
-    role: Literal["business", "employee"]
     name: str
-    lastname: str | None = None  # only used when role == "employee"
     email: EmailStr
     password: str
-    business_id: int | None = None  # required when role == "employee"
+    role: Literal["employee", "manager"] = "employee"
+    business_id: int | None = None
+    team_id: int | None = None
 
 
 class LoginRequest(BaseModel):
-    role: Literal["business", "employee"]
     email: EmailStr
     password: str
 
@@ -21,4 +20,4 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    role: Literal["business", "employee"]
+    role: str

@@ -1,7 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import active_services, ai, auth, businesses, employees, quests, redeemed_history, services
+from app.api.routers import (
+    active_services,
+    ai,
+    auth,
+    business_applications,
+    employees,
+    providers,
+    quests,
+    redeemed_history,
+    requests,
+    services,
+)
 from app.core.config import settings
 
 app = FastAPI(title="Perx API")
@@ -18,9 +29,11 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
-app.include_router(businesses.router)
+app.include_router(business_applications.router)
 app.include_router(employees.router)
+app.include_router(providers.router)
 app.include_router(services.router)
+app.include_router(requests.router)
 app.include_router(active_services.router)
 app.include_router(redeemed_history.router)
 app.include_router(quests.router)

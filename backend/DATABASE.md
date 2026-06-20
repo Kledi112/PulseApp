@@ -3,23 +3,41 @@
 ## How the model works
 
 The database is Postgres, accessed through SQLAlchemy. Each table is a Python class in
-`app/models/`, inheriting from `Base` (`app/db/base.py`):
+`app/models/`, inheriting from `Base` (`app/db/base.py`). This schema is aligned
+field-for-field with the frontend's mock data shapes (`types/*.ts`, `data/*.ts`,
+`services/*.ts`) so it's a drop-in target once those services are wired to real HTTP
+calls instead of local mock arrays.
 
-- `app/models/business.py` — `Business` table (a company, e.g. "Acme Inc")
-- `app/models/employee.py` — `Employee` table (FK `business_id` → `businesses`)
-- `app/models/service.py` — `Service` table — a **global, hand-written catalog** of perks
-  (e.g. "Gym Membership"). Not tied to any one business; rows are added by hand for now,
-  not through the API.
-- `app/models/active_service.py` — `ActiveService` table — a service currently
-  pending/active for one specific employee (`employee_id`, `service_id`, `status`:
-  `"pending"` or `"active"`). When the employee finishes/redeems it, the row is deleted
-  from here and a row is created in `redeemed_history` instead — a service is either
-  in-progress (`active_services`) or done (`redeemed_history`), never both.
-- `app/models/redeemed_history.py` — `RedeemedHistory` table — a record of an employee
-  having finished/redeemed a service (`service_id`, `employee_id`, `redeemed_at`,
-  `status`, default `"finished"`).
-- `app/models/quest.py` — `Quest` table — links an employee to a service they earned
-  through a quest (`employee_id`, `service_id`).
+- `app/models/business_application.py` — `BusinessApplication` — a company applying to
+  bring Pulse to its employees (`types/business-application.ts`). This is a lead-gen
+  submission for Pulse staff to review, **not a login account** - the registration
+  screen collects no password.
+- `app/models/team.py` — `Team` — a group employees belong to (e.g. "Engineering").
+- `app/models/employee.py` — `Employee` — the app's actual user account
+  (`types/user.ts` `User`). `role` (`"employee"` or `"manager"`) distinguishes a regular
+  employee from a manager - **there is no separate business/manager login type.**
+  Optional `business_id` / `team_id` FKs.
+- `app/models/provider.py` — `Provider` — a perk's merchant (`types/provider.ts`).
+- `app/models/service.py` — `Service` — the "Perk" shown in the marketplace
+  (`types/perk.ts`), belongs to one `Provider`.
+- `app/models/request.py` + `app/models/request_item.py` — `Request` /
+  `RequestItem` — an employee's redemption request for one perk (`"single"`) or several
+  bundled together (`"bundle"`), pending manager approval (`types/request.ts`).
+  `RequestItem` snapshots `title`/`provider_name`/price at request time.
+- `app/models/active_service.py` — `ActiveService` — a perk an employee requested that
+  is `"pending"` manager approval or `"active"` (approved and in use).
+- `app/models/redeemed_history.py` — `RedeemedHistory` — a perk an employee has fully
+  claimed (`data/claimed-perks.ts` `ClaimedPerk`). Snapshots `title`/`provider_name`/price
+  at claim time.
+- `app/models/quest.py` + `app/models/quest_entry.py` — `Quest` / `QuestEntry` — a
+  standalone challenge (not linked to a service) employees or teams compete in
+  (`types/quest.ts`). A quest's winner and an entry's participant can be either an
+  `Employee` (individual) or a `Team` - exactly one of `employee_id`/`team_id` is set,
+  matching `mode`/`type`.
+
+There is **no stored leaderboard table** - `GET /quests/leaderboard` computes it on the
+fly from completed `Quest` rows. There is also no chat-message table yet - the
+assistant chat is local-only in the frontend until real AI wiring happens.
 
 Each column is declared with `Mapped[type]` + `mapped_column(...)`, e.g.:
 
@@ -27,9 +45,9 @@ Each column is declared with `Mapped[type]` + `mapped_column(...)`, e.g.:
 name: Mapped[str] = mapped_column(String(255), nullable=False)
 ```
 
-Relationships between tables (e.g. a `Business` having many `Employee`s) are declared
-with `relationship(...)` on both sides so you can do `business.employees` or
-`employee.business` in Python without writing the join yourself.
+Some response fields (e.g. `Service.provider_name`, `Employee.team_name`,
+`Quest.winner_name`) are Python `@property` methods on the model, not real columns -
+they're derived via the relationship at read time so the data isn't duplicated.
 
 SQLAlchemy never touches the actual Postgres schema on its own — it only describes what
 the tables *should* look like in Python. **Alembic** is the tool that compares that
@@ -105,24 +123,45 @@ Delete the model class (and remove its import from `app/models/__init__.py` and
 `alembic/env.py`), then run the same `alembic revision --autogenerate` +
 `alembic upgrade head` steps — Alembic will generate a `DROP TABLE` for you.
 
-### Adding new services
+## Core workflows
 
-Since `Service` is a static, hand-written catalog (not created through the API), add
-new rows either with a one-off SQL `INSERT` (e.g. via
-`docker-compose exec db psql -U perx -d perx`) or a small seed script — employees then
-request access to a service as described below.
+### Adding providers/services (the static perk catalog)
 
-### Active service → redeemed history lifecycle
+`Provider` and `Service` aren't created through the API - add rows with a one-off SQL
+`INSERT` (e.g. via `docker-compose exec db psql -U perx -d perx`) or a small seed script.
 
-1. Employee requests a service: `POST /active-services` (employee auth) creates a row
-   with `status: "pending"`.
-2. Business reviews pending requests at `GET /active-services/business`, and either:
-   - `POST /active-services/{id}/approve` → flips `status` to `"active"`, or
-   - `POST /active-services/{id}/reject` → deletes the row outright (denied).
-3. While pending/active, the request shows up for that employee at
-   `GET /active-services`. Redeeming via `POST /redeemed-history` only succeeds once
-   `status` is `"active"` — a still-`"pending"` request can't be redeemed yet.
-4. When redeemed: `POST /redeemed-history` with `service_id` deletes the matching
-   `active_services` row and creates a `redeemed_history` row in its place. There is no
-   "finished" status sitting in `active_services` — once redeemed, it only exists in
-   `redeemed_history`.
+### Request → ActiveService → RedeemedHistory lifecycle
+
+1. Employee submits a request: `POST /requests` with `type` (`"single"`/`"bundle"`) and
+   `service_ids`. This creates a `Request` + one `RequestItem` per service (snapshotting
+   price/title/provider), and one `ActiveService` row per service with
+   `status: "pending"`.
+2. Manager reviews pending requests: `GET /requests?status_filter=pending`.
+3. Manager approves: `POST /requests/{id}/approve` with `payment_method`
+   (`"card"`/`"paypal"`). This simultaneously:
+   - flips the request's `ActiveService` rows to `status: "active"`, **and**
+   - creates a `RedeemedHistory` row for each item.
+   (Both happen together - matching the product behavior: paying for a perk both
+   activates it for ongoing use *and* records it as claimed.)
+4. Manager declines: `POST /requests/{id}/decline` — marks the request `"declined"` and
+   deletes its `ActiveService` rows.
+
+### Quests
+
+1. Manager creates a quest: `POST /quests` (`title`, `description`, `reward`, `type`,
+   `deadline`) → `status: "active"`.
+2. Employees enter: `POST /quests/{id}/entries` with `mode` (`"individual"` enters the
+   calling employee, `"team"` requires `team_id`).
+3. Manager reviews entries (`GET /quests/{id}/entries`) and quests needing a decision
+   (`GET /quests/awaiting-winner`), then picks a winner:
+   `POST /quests/{id}/select-winner` with either `employee_id` or `team_id` →
+   `status: "completed"`.
+4. `GET /quests/leaderboard?period=month|quarter` computes completed-quest counts per
+   winning employee/team for the given period - nothing is precomputed or stored.
+
+## Auth
+
+Single account type (`Employee`), distinguished by `role`. `POST /auth/register` /
+`POST /auth/login` issue the same JWT shape regardless of role; endpoints that should
+be manager-only depend on `get_current_manager` (in `app/api/deps.py`), which checks
+`role == "manager"` on top of the normal `get_current_employee` check.

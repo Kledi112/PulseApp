@@ -1,9 +1,8 @@
 """Single integration point for LLM-backed features.
 
 Until an LLM provider key is configured (settings.llm_api_key), recommendations
-fall back to a simple rule: services most redeemed by other employees at the same
-business. Swap the body of get_recommendations() for a real LLM call without touching
-callers.
+fall back to a simple rule: the most claimed active services overall. Swap the body
+of get_recommendations() for a real LLM call without touching callers.
 """
 
 from sqlalchemy import func
@@ -22,9 +21,8 @@ def get_recommendations(db: Session, employee: Employee, limit: int = 5) -> list
 
     return (
         db.query(Service)
-        .join(RedeemedHistory, RedeemedHistory.service_id == Service.id)
-        .join(Employee, Employee.id == RedeemedHistory.employee_id)
-        .filter(Employee.business_id == employee.business_id, Service.active.is_(True))
+        .outerjoin(RedeemedHistory, RedeemedHistory.service_id == Service.id)
+        .filter(Service.active.is_(True))
         .group_by(Service.id)
         .order_by(func.count(RedeemedHistory.id).desc())
         .limit(limit)

@@ -7,17 +7,28 @@ from app.db.base import Base
 
 
 class Employee(Base):
+    """The app's user account (types/user.ts `User`). `role` distinguishes a regular
+    employee from a manager - there is no separate manager/business login type."""
+
     __tablename__ = "employees"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), nullable=False)
+    business_id: Mapped[int | None] = mapped_column(ForeignKey("business_applications.id"), nullable=True)
+    team_id: Mapped[int | None] = mapped_column(ForeignKey("teams.id"), nullable=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    lastname: Mapped[str] = mapped_column(String(255), nullable=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), default="employee")
+    avatar_uri: Mapped[str] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
-    business = relationship("Business", back_populates="employees")
+    business = relationship("BusinessApplication", back_populates="employees")
+    team = relationship("Team", back_populates="employees")
+
+    @property
+    def team_name(self) -> str | None:
+        return self.team.name if self.team else None
     active_services = relationship("ActiveService", back_populates="employee", cascade="all, delete-orphan")
     redeemed_history = relationship("RedeemedHistory", back_populates="employee", cascade="all, delete-orphan")
-    quests = relationship("Quest", back_populates="employee", cascade="all, delete-orphan")
+    requests = relationship("Request", back_populates="employee", cascade="all, delete-orphan")
+    quest_entries = relationship("QuestEntry", back_populates="employee", cascade="all, delete-orphan")

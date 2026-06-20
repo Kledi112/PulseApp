@@ -1,11 +1,19 @@
-import { Perk, RequestItem } from '@/types';
+import { Perk } from '@/types';
 
 export const BUNDLE_DISCOUNT_RATE = 0.1;
 export const BUNDLE_MIN_PERKS_FOR_DISCOUNT = 2;
 
-export function computeBundlePricing(perks: Perk[]): { items: RequestItem[]; totalAll: number; discountApplied: boolean } {
+export type BundleLineItem = {
+  perkId: string;
+  title: string;
+  providerName: string;
+  originalPriceAll: number;
+  discountedPriceAll: number;
+};
+
+export function computeBundlePricing(perks: Perk[]): { items: BundleLineItem[]; totalAll: number; discountApplied: boolean } {
   const discountApplied = perks.length >= BUNDLE_MIN_PERKS_FOR_DISCOUNT;
-  const items: RequestItem[] = perks.map((perk) => ({
+  const items: BundleLineItem[] = perks.map((perk) => ({
     perkId: perk.id,
     title: perk.title,
     providerName: perk.providerName,

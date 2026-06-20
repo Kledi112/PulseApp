@@ -24,5 +24,3 @@ class Service(Base):
     def provider_name(self) -> str:
         return self.provider.name
     active_services = relationship("ActiveService", back_populates="service", cascade="all, delete-orphan")
-    redeemed_history = relationship("RedeemedHistory", back_populates="service", cascade="all, delete-orphan")
-    request_items = relationship("RequestItem", back_populates="service", cascade="all, delete-orphan")

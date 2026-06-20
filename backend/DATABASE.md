@@ -16,19 +16,19 @@ calls instead of local mock arrays.
 - `app/models/employee.py` — `Employee` — the app's actual user account
   (`types/user.ts` `User`). `role` (`"employee"` or `"manager"`) distinguishes a regular
   employee from a manager - **there is no separate business/manager login type.**
-  Optional `business_id` / `team_id` FKs.
+  Optional `business_id` / `team_id` FKs. `monthly_budget_all` (cents) is the per-employee
+  monthly perk budget, set by their manager.
 - `app/models/provider.py` — `Provider` — a perk's merchant (`types/provider.ts`).
 - `app/models/service.py` — `Service` — the "Perk" shown in the marketplace
   (`types/perk.ts`), belongs to one `Provider`.
-- `app/models/request.py` + `app/models/request_item.py` — `Request` /
-  `RequestItem` — an employee's redemption request for one perk (`"single"`) or several
-  bundled together (`"bundle"`), pending manager approval (`types/request.ts`).
-  `RequestItem` snapshots `title`/`provider_name`/price at request time.
-- `app/models/active_service.py` — `ActiveService` — a perk an employee requested that
-  is `"pending"` manager approval or `"active"` (approved and in use).
-- `app/models/redeemed_history.py` — `RedeemedHistory` — a perk an employee has fully
-  claimed (`data/claimed-perks.ts` `ClaimedPerk`). Snapshots `title`/`provider_name`/price
-  at claim time.
+- `app/models/active_service.py` — `ActiveService` — a perk an employee has taken. This
+  is the system of record across the perk's whole lifecycle (it replaced the old
+  `Request`/`RequestItem`/`RedeemedHistory` approval flow): `status: "active"` means
+  taken and reserved against this month's budget but not yet claimed at the venue;
+  `status: "claimed"` means the employee scanned their QR code (`GET /c/{token}`).
+  `title_snapshot`/`provider_name_snapshot`/`price_all_snapshot` are captured at take
+  time so the row stays accurate if the catalog changes later. `token` is the unguessable
+  value embedded in the perk's QR code.
 - `app/models/quest.py` + `app/models/quest_entry.py` — `Quest` / `QuestEntry` — a
   standalone challenge (not linked to a service) employees or teams compete in
   (`types/quest.ts`). A quest's winner and an entry's participant can be either an
@@ -130,21 +130,30 @@ Delete the model class (and remove its import from `app/models/__init__.py` and
 `Provider` and `Service` aren't created through the API - add rows with a one-off SQL
 `INSERT` (e.g. via `docker-compose exec db psql -U perx -d perx`) or a small seed script.
 
-### Request → ActiveService → RedeemedHistory lifecycle
+### Take → claim → budget lifecycle
 
-1. Employee submits a request: `POST /requests` with `type` (`"single"`/`"bundle"`) and
-   `service_ids`. This creates a `Request` + one `RequestItem` per service (snapshotting
-   price/title/provider), and one `ActiveService` row per service with
-   `status: "pending"`.
-2. Manager reviews pending requests: `GET /requests?status_filter=pending`.
-3. Manager approves: `POST /requests/{id}/approve` with `payment_method`
-   (`"card"`/`"paypal"`). This simultaneously:
-   - flips the request's `ActiveService` rows to `status: "active"`, **and**
-   - creates a `RedeemedHistory` row for each item.
-   (Both happen together - matching the product behavior: paying for a perk both
-   activates it for ongoing use *and* records it as claimed.)
-4. Manager declines: `POST /requests/{id}/decline` — marks the request `"declined"` and
-   deletes its `ActiveService` rows.
+There is no manager approval step - employees take perks instantly, capped by their
+own monthly budget.
+
+1. Employee takes a perk: `POST /active-services` (`{service_id}`) or
+   `POST /active-services/bundle` (`{service_ids}`, gets the existing 10%
+   two-or-more-perks discount). The backend checks
+   `app/services/budget_service.py`'s `remaining_all` for the current calendar month
+   (`monthly_budget_all - reserved("active" rows) - claimed("claimed" rows)`, both keyed
+   by `taken_at`'s month) and rejects with `400` if the perk's price would exceed it.
+   On success, creates one `ActiveService` row per perk with `status: "active"` and a
+   fresh unguessable `token`.
+2. Employee shows the QR code for an unclaimed perk, encoding
+   `{EXPO_PUBLIC_CLAIM_BASE_URL}/c/{token}`.
+3. Venue staff scan it with their own phone (no app/login needed) →
+   `GET /c/{token}` (`app/api/routers/claims.py`) flips that row to `status: "claimed"`,
+   sets `claimed_at`, and returns a plain HTML "Perk claimed successfully" /
+   "Failed to claim perk" page. Re-scanning an already-claimed token shows an
+   "already claimed" message instead of double-processing.
+4. Manager views `GET /manager/history` (all claimed perks for their business, newest
+   first - grouped by date client-side) and `GET /manager/invoice?month=YYYY-MM` (total
+   owed per employee for that month, summed from `claimed_at`).
+5. Manager sets/edits a budget: `PUT /manager/employees/{employee_id}/budget`.
 
 ### Quests
 

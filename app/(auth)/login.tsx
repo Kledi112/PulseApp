@@ -27,7 +27,7 @@ export default function LoginScreen() {
     try {
       const user = await loginWithCredentials(email.trim(), password);
       signIn(user);
-      router.replace(user.role === 'manager' ? '/(manager)/(tabs)/requests' : '/(employee)/marketplace');
+      router.replace(user.role === 'manager' ? '/(manager)/(tabs)/team' : '/(employee)/marketplace');
     } catch {
       Alert.alert('Sign in failed', 'Check your email and password and try again.');
     } finally {
@@ -51,7 +51,7 @@ export default function LoginScreen() {
     setSubmitting(true);
     try {
       await signInAsDemoManager();
-      router.replace('/(manager)/(tabs)/requests');
+      router.replace('/(manager)/(tabs)/team');
     } catch {
       // No alert here - api-client.ts already shows the global connection-error modal.
     } finally {

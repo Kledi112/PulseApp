@@ -6,11 +6,11 @@ from app.api.routers import (
     ai,
     auth,
     business_applications,
+    claims,
     employees,
+    manager,
     providers,
     quests,
-    redeemed_history,
-    requests,
     services,
 )
 from app.core.config import settings
@@ -33,11 +33,11 @@ app.include_router(business_applications.router)
 app.include_router(employees.router)
 app.include_router(providers.router)
 app.include_router(services.router)
-app.include_router(requests.router)
 app.include_router(active_services.router)
-app.include_router(redeemed_history.router)
 app.include_router(quests.router)
 app.include_router(ai.router)
+app.include_router(manager.router)
+app.include_router(claims.router)
 
 
 @app.get("/health")

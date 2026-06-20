@@ -5,7 +5,7 @@ import { Alert, FlatList, Pressable, View } from 'react-native';
 import { AppText, Button, Card, Screen } from '@/components/ui';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { strings } from '@/i18n/strings';
-import { submitRequest } from '@/services';
+import { takeBundle } from '@/services';
 import { useAuthStore } from '@/store/auth-store';
 import { useBundleStore } from '@/store/bundle-store';
 import { Colors, Radii, Spacing } from '@/theme';
@@ -21,21 +21,16 @@ export default function BundleScreen() {
 
   const { items: requestItems, totalAll, discountApplied } = computeBundlePricing(items);
 
-  const handleRequestBundle = async () => {
+  const handleTakeBundle = async () => {
     if (!user || items.length === 0) return;
     setSubmitting(true);
     try {
-      await submitRequest({
-        employeeId: user.id,
-        employeeName: user.name,
-        type: 'bundle',
-        items: requestItems,
-        totalAll,
-      });
+      await takeBundle(items.map((item) => item.id));
       clear();
-      Alert.alert(strings.marketplace.requestSent, strings.marketplace.requestSentBody);
-    } catch {
-      Alert.alert('Request failed', 'Could not reach the backend. Check your connection and try again.');
+      Alert.alert(strings.marketplace.perkTaken, strings.marketplace.perkTakenBody);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not reach the backend. Check your connection and try again.';
+      Alert.alert(strings.marketplace.takeFailed, message);
     } finally {
       setSubmitting(false);
     }
@@ -120,7 +115,7 @@ export default function BundleScreen() {
                 {formatCurrency(totalAll)}
               </AppText>
             </View>
-            <Button label={strings.bundle.requestBundle} onPress={handleRequestBundle} loading={submitting} />
+            <Button label={strings.bundle.takeBundle} onPress={handleTakeBundle} loading={submitting} />
           </View>
         }
       />

@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { ConnectionErrorModal } from '@/components/ConnectionErrorModal';
+import { GlobalLoadingOverlay } from '@/components/GlobalLoadingOverlay';
 import { Colors } from '@/theme';
 
 export const unstable_settings = {
@@ -20,6 +21,7 @@ export default function RootLayout() {
       </Stack>
       <StatusBar style="light" />
       <ConnectionErrorModal />
+      <GlobalLoadingOverlay />
     </ThemeProvider>
   );
 }

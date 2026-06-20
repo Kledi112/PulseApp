@@ -15,8 +15,8 @@ export default function ManagerTabLayout() {
         tabBarStyle: { backgroundColor: Colors.surface, borderTopColor: Colors.border },
       }}>
       <Tabs.Screen
-        name="requests"
-        options={{ title: 'Requests', tabBarIcon: ({ color }) => <IconSymbol name="tray.full.fill" color={color} size={24} /> }}
+        name="team"
+        options={{ title: 'Team', tabBarIcon: ({ color }) => <IconSymbol name="tray.full.fill" color={color} size={24} /> }}
       />
       <Tabs.Screen
         name="quest-management"

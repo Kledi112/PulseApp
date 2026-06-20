@@ -1,37 +1,48 @@
-import { perks } from '@/data/perks';
-import { AssistantMessage, Category } from '@/types';
+import { AssistantMessage, Category, Perk } from '@/types';
 
-import { delay } from './mock-delay';
+import { api } from './api-client';
 
-const KEYWORD_CATEGORY: { keywords: string[]; category: Category }[] = [
-  { keywords: ['relax', 'stress', 'calm', 'massage', 'spa'], category: 'wellness' },
-  { keywords: ['eat', 'food', 'dinner', 'lunch', 'restaurant', 'hungry'], category: 'food' },
-  { keywords: ['travel', 'trip', 'vacation', 'holiday', 'weekend away'], category: 'travel' },
-  { keywords: ['fun', 'movie', 'entertainment', 'weekend'], category: 'fun' },
-  { keywords: ['phone', 'data', 'mobile', 'internet'], category: 'telecom' },
-  { keywords: ['health', 'doctor', 'checkup', 'clinic'], category: 'healthcare' },
-];
+type ServiceResponse = {
+  id: number;
+  provider_id: number;
+  provider_name: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  price_all: number;
+  image_uri: string | null;
+  active: boolean;
+};
 
-function matchCategory(text: string): Category | undefined {
-  const lower = text.toLowerCase();
-  const match = KEYWORD_CATEGORY.find((entry) => entry.keywords.some((keyword) => lower.includes(keyword)));
-  return match?.category;
+type AssistantResponse = {
+  text: string;
+  perks: ServiceResponse[];
+};
+
+function mapService(data: ServiceResponse): Perk {
+  return {
+    id: String(data.id),
+    providerId: String(data.provider_id),
+    providerName: data.provider_name,
+    title: data.title,
+    description: data.description ?? '',
+    category: (data.category ?? 'fun') as Category,
+    priceAll: data.price_all,
+    imageUri: data.image_uri ?? '',
+  };
 }
 
-// TODO: replace this stub with a real AI backend call behind the same function signature.
-export async function sendAssistantMessage(text: string): Promise<AssistantMessage> {
-  const category = matchCategory(text);
-  const matchingPerks = category ? perks.filter((perk) => perk.category === category).slice(0, 2) : [];
+// Gemini calls routinely take longer than the default 1.5s fetch timeout used by
+// quick CRUD endpoints, so this gets a much longer per-attempt budget.
+const ASSISTANT_TIMEOUT_MS = 20000;
 
-  const reply: AssistantMessage = {
+export async function sendAssistantMessage(text: string): Promise<AssistantMessage> {
+  const result = await api.post<AssistantResponse>('/ai/assistant', { message: text }, ASSISTANT_TIMEOUT_MS);
+  return {
     id: `msg-${Date.now()}`,
     role: 'assistant',
-    text: matchingPerks.length
-      ? `Here is something that might fit. I found ${matchingPerks.length} option${matchingPerks.length > 1 ? 's' : ''} for you.`
-      : 'I am not sure yet, but try asking about food, travel, wellness, or fun and I will find a perk for you.',
-    perks: matchingPerks,
+    text: result.text,
+    perks: result.perks.map(mapService),
     createdAt: new Date().toISOString(),
   };
-
-  return delay(reply, 900);
 }

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, ScrollView, View } from 'react-native';
+import { Alert, FlatList, ScrollView, View } from 'react-native';
 
 import { PulseIcon } from '@/components/ui/PulseIcon';
 import { PerkCard } from '@/components/PerkCard';
 import { AppText, CategoryChip, Screen } from '@/components/ui';
 import { strings } from '@/i18n/strings';
-import { getPerksByCategory, submitRequest } from '@/services';
+import { getPerksByCategory, takePerk } from '@/services';
 import { useAuthStore } from '@/store/auth-store';
 import { useBundleStore } from '@/store/bundle-store';
 import { Colors, Spacing } from '@/theme';
@@ -43,19 +43,14 @@ export default function MarketplaceScreen() {
     };
   }, [selectedCategory]);
 
-  const handleRequest = async (perk: Perk) => {
+  const handleTake = async (perk: Perk) => {
     if (!user) return;
     try {
-      await submitRequest({
-        employeeId: user.id,
-        employeeName: user.name,
-        type: 'single',
-        items: [{ perkId: perk.id, title: perk.title, providerName: perk.providerName, originalPriceAll: perk.priceAll, discountedPriceAll: perk.priceAll }],
-        totalAll: perk.priceAll,
-      });
-      Alert.alert(strings.marketplace.requestSent, strings.marketplace.requestSentBody);
-    } catch {
-      Alert.alert('Request failed', 'Could not reach the backend. Check your connection and try again.');
+      await takePerk(perk.id);
+      Alert.alert(strings.marketplace.perkTaken, strings.marketplace.perkTakenBody);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not reach the backend. Check your connection and try again.';
+      Alert.alert(strings.marketplace.takeFailed, message);
     }
   };
 
@@ -90,11 +85,7 @@ export default function MarketplaceScreen() {
         ))}
       </ScrollView>
 
-      {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={Colors.teal} />
-        </View>
-      ) : perks.length === 0 ? (
+      {loading ? null : perks.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl }}>
           <AppText variant="body" color={Colors.textSecondary} style={{ textAlign: 'center' }}>
             No perks in this category yet.
@@ -109,7 +100,7 @@ export default function MarketplaceScreen() {
           renderItem={({ item }) => (
             <PerkCard
               perk={item}
-              onRequest={handleRequest}
+              onTake={handleTake}
               onAddToBundle={addPerk}
               isInBundle={bundleItems.some((bundleItem) => bundleItem.id === item.id)}
             />

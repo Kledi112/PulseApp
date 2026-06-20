@@ -4,5 +4,4 @@ export * from './common';
 export * from './perk';
 export * from './provider';
 export * from './quest';
-export * from './request';
 export * from './user';

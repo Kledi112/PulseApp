@@ -1,13 +1,11 @@
 export const strings = {
   common: {
     appName: 'Pulse',
-    request: 'Request',
+    take: 'Take perk',
     addToBundle: 'Add to bundle',
     cancel: 'Cancel',
     save: 'Save',
     logOut: 'Log out',
-    approve: 'Approve',
-    decline: 'Decline',
   },
   auth: {
     title: 'Welcome back',
@@ -38,8 +36,9 @@ export const strings = {
     title: 'Pulse App',
     subtitle: 'Pick a perk and put it to use',
     allCategory: 'All',
-    requestSent: 'Request sent',
-    requestSentBody: 'Your manager will review it shortly.',
+    perkTaken: 'Perk added',
+    perkTakenBody: 'Find it under "My perks" on your profile - show its QR code at the venue to claim it.',
+    takeFailed: "Couldn't take perk",
   },
   bundle: {
     title: 'Your bundle',
@@ -48,17 +47,22 @@ export const strings = {
     discountHint: 'Add one more perk to unlock 10% off each item',
     discountActive: '10% off each perk in this bundle',
     total: 'Total',
-    requestBundle: 'Request bundle',
+    takeBundle: 'Take bundle',
     remove: 'Remove',
   },
   profile: {
     title: 'Profile',
-    pendingTitle: 'Pending approval',
-    emptyPending: 'No perks pending approval',
-    activeTitle: 'Active perks',
+    budgetTitle: 'This month’s budget',
+    activeTitle: 'My perks',
     emptyActive: 'No active perks yet',
+    showQr: 'Show QR code',
     historyTitle: 'Claimed perks',
     emptyHistory: 'No claimed perks yet',
     editPhoto: 'Change photo',
+  },
+  claimQr: {
+    title: 'Show this at the venue',
+    subtitle: 'Venue staff scan this to claim the perk',
+    close: 'Close',
   },
 } as const;

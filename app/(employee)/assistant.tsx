@@ -33,9 +33,22 @@ export default function AssistantScreen() {
     setInput('');
     setTyping(true);
 
-    const reply = await sendAssistantMessage(text);
-    setTyping(false);
-    setMessages((prev) => [...prev, reply]);
+    try {
+      const reply = await sendAssistantMessage(text);
+      setMessages((prev) => [...prev, reply]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg-${Date.now()}`,
+          role: 'assistant',
+          text: "Sorry, I couldn't reach the assistant. Please try again.",
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    } finally {
+      setTyping(false);
+    }
   };
 
   return (

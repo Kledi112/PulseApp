@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime, ForeignKey
+from sqlalchemy import String, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -20,6 +20,7 @@ class Employee(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), default="employee")
     avatar_uri: Mapped[str] = mapped_column(String(500), nullable=True)
+    monthly_budget_all: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     business = relationship("BusinessApplication", back_populates="employees")
@@ -29,6 +30,4 @@ class Employee(Base):
     def team_name(self) -> str | None:
         return self.team.name if self.team else None
     active_services = relationship("ActiveService", back_populates="employee", cascade="all, delete-orphan")
-    redeemed_history = relationship("RedeemedHistory", back_populates="employee", cascade="all, delete-orphan")
-    requests = relationship("Request", back_populates="employee", cascade="all, delete-orphan")
     quest_entries = relationship("QuestEntry", back_populates="employee", cascade="all, delete-orphan")

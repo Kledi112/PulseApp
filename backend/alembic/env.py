@@ -12,9 +12,6 @@ from app.models import (  # noqa: F401 ensures metadata is populated
     Provider,
     Quest,
     QuestEntry,
-    RedeemedHistory,
-    Request,
-    RequestItem,
     Service,
     Team,
 )

@@ -4,13 +4,12 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 
+import { ClaimQRModal } from '@/components/ClaimQRModal';
 import { AppText, Button, Card, Input, Screen } from '@/components/ui';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ActiveService } from '@/data/active-services';
-import { ClaimedPerk } from '@/data/claimed-perks';
 import { strings } from '@/i18n/strings';
-import { getActivePerks, getPendingServices } from '@/services/active-services';
-import { getClaimedPerks } from '@/services/requests';
+import { Budget, getMyBudget, getMyPerks } from '@/services/active-services';
 import { useAuthStore } from '@/store/auth-store';
 import { Colors, Radii, Spacing } from '@/theme';
 import { formatCurrency } from '@/utils/currency';
@@ -21,16 +20,18 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
   const signOut = useAuthStore((state) => state.signOut);
   const [name, setName] = useState(user?.name ?? '');
   const [password, setPassword] = useState('');
-  const [history, setHistory] = useState<ClaimedPerk[]>([]);
-  const [pending, setPending] = useState<ActiveService[]>([]);
+  const [history, setHistory] = useState<ActiveService[]>([]);
   const [active, setActive] = useState<ActiveService[]>([]);
+  const [budget, setBudget] = useState<Budget | null>(null);
+  const [qrToken, setQrToken] = useState<string | null>(null);
+  const [qrPerkTitle, setQrPerkTitle] = useState<string | undefined>();
 
   useFocusEffect(
     useCallback(() => {
       if (!user || !showHistory) return;
-      getClaimedPerks(user.id).then(setHistory).catch(() => setHistory([]));
-      getPendingServices(user.id).then(setPending).catch(() => setPending([]));
-      getActivePerks(user.id).then(setActive).catch(() => setActive([]));
+      getMyPerks('claimed').then(setHistory).catch(() => setHistory([]));
+      getMyPerks('active').then(setActive).catch(() => setActive([]));
+      getMyBudget().then(setBudget).catch(() => setBudget(null));
     }, [user, showHistory])
   );
 
@@ -62,6 +63,11 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
   const handleLogOut = () => {
     signOut();
     router.replace('/(auth)/login');
+  };
+
+  const openQr = (service: ActiveService) => {
+    setQrToken(service.token);
+    setQrPerkTitle(service.title);
   };
 
   return (
@@ -107,32 +113,24 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
         <Button label={strings.common.save} variant="secondary" onPress={handleSave} />
       </View>
 
-      {showHistory && (
+      {showHistory && budget && (
         <View style={{ marginTop: Spacing.xl, gap: Spacing.sm }}>
-          <AppText variant="subtitle">{strings.profile.pendingTitle}</AppText>
-          {pending.length === 0 ? (
-            <AppText variant="body" color={Colors.textSecondary}>
-              {strings.profile.emptyPending}
-            </AppText>
-          ) : (
-            pending.map((service) => (
-              <Card key={service.id}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ gap: Spacing.xxs, flex: 1 }}>
-                    <AppText variant="label" numberOfLines={1}>
-                      {service.title}
-                    </AppText>
-                    <AppText variant="caption" color={Colors.textTertiary}>
-                      {service.providerName}
-                    </AppText>
-                  </View>
-                  <AppText variant="label" color={Colors.teal}>
-                    {formatCurrency(service.priceAll)}
-                  </AppText>
-                </View>
-              </Card>
-            ))
-          )}
+          <AppText variant="subtitle">{strings.profile.budgetTitle}</AppText>
+          <Card>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <AppText variant="body" color={Colors.textSecondary}>
+                Remaining
+              </AppText>
+              <AppText variant="subtitle" color={Colors.teal}>
+                {formatCurrency(budget.remainingAll)}
+              </AppText>
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing.xs }}>
+              <AppText variant="caption" color={Colors.textTertiary}>
+                of {formatCurrency(budget.monthlyBudgetAll)} monthly budget
+              </AppText>
+            </View>
+          </Card>
         </View>
       )}
 
@@ -146,7 +144,7 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
           ) : (
             active.map((service) => (
               <Card key={service.id}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.sm }}>
                   <View style={{ gap: Spacing.xxs, flex: 1 }}>
                     <AppText variant="label" numberOfLines={1}>
                       {service.title}
@@ -154,10 +152,22 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
                     <AppText variant="caption" color={Colors.textTertiary}>
                       {service.providerName}
                     </AppText>
+                    <AppText variant="label" color={Colors.teal}>
+                      {formatCurrency(service.priceAll)}
+                    </AppText>
                   </View>
-                  <AppText variant="label" color={Colors.teal}>
-                    {formatCurrency(service.priceAll)}
-                  </AppText>
+                  <Pressable
+                    onPress={() => openQr(service)}
+                    style={{
+                      paddingHorizontal: Spacing.sm,
+                      paddingVertical: Spacing.xs,
+                      borderRadius: Radii.pill,
+                      backgroundColor: Colors.teal,
+                    }}>
+                    <AppText variant="caption" color={Colors.background}>
+                      {strings.profile.showQr}
+                    </AppText>
+                  </Pressable>
                 </View>
               </Card>
             ))
@@ -200,6 +210,8 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
         onPress={handleLogOut}
         style={{ marginTop: Spacing.xxl, marginBottom: Spacing.lg, borderRadius: Radii.pill }}
       />
+
+      <ClaimQRModal visible={qrToken !== null} token={qrToken} title={qrPerkTitle} onClose={() => setQrToken(null)} />
     </Screen>
   );
 }

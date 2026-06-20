@@ -39,9 +39,9 @@ export async function loginWithCredentials(email: string, password: string): Pro
 
 // Seeded backend accounts used by the "demo access" buttons on the login screen,
 // so a presenter can get into the app without typing credentials. These must exist
-// in whichever database the demo is run against (see backend/DATABASE.md).
-const DEMO_EMPLOYEE_CREDENTIALS = { email: 'elira@pulse.al', password: 'pass1234' };
-const DEMO_MANAGER_CREDENTIALS = { email: 'gentian@pulse.al', password: 'pass1234' };
+// in whichever database the demo is run against - see backend/app/db/seed.py.
+const DEMO_EMPLOYEE_CREDENTIALS = { email: 'alice@demo.com', password: 'password123' };
+const DEMO_MANAGER_CREDENTIALS = { email: 'manager@demo.com', password: 'password123' };
 
 export function loginAsDemoEmployee(): Promise<User> {
   return loginWithCredentials(DEMO_EMPLOYEE_CREDENTIALS.email, DEMO_EMPLOYEE_CREDENTIALS.password);

@@ -9,12 +9,12 @@ import { strings } from '@/i18n/strings';
 
 type PerkCardProps = {
   perk: Perk;
-  onRequest: (perk: Perk) => void;
+  onTake: (perk: Perk) => void;
   onAddToBundle: (perk: Perk) => void;
   isInBundle?: boolean;
 };
 
-export function PerkCard({ perk, onRequest, onAddToBundle, isInBundle }: PerkCardProps) {
+export function PerkCard({ perk, onTake, onAddToBundle, isInBundle }: PerkCardProps) {
   return (
     <Card padded={false} style={{ overflow: 'hidden' }}>
       <Image source={{ uri: perk.imageUri }} style={{ width: '100%', height: 140 }} contentFit="cover" />
@@ -30,7 +30,7 @@ export function PerkCard({ perk, onRequest, onAddToBundle, isInBundle }: PerkCar
           {formatCurrency(perk.priceAll)}
         </AppText>
         <View style={{ flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xs }}>
-          <Button label={strings.common.request} size="sm" onPress={() => onRequest(perk)} style={{ flex: 1 }} />
+          <Button label={strings.common.take} size="sm" onPress={() => onTake(perk)} style={{ flex: 1 }} />
           <Pressable
             onPress={() => onAddToBundle(perk)}
             disabled={isInBundle}

@@ -41,7 +41,16 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}, attemptTimeoutMs: number = ATTEMPT_TIMEOUT_MS): Promise<T> {
+type RequestExtras = {
+  timeoutMs?: number;
+  // Skips the global full-screen overlay for calls that already show their own
+  // in-context loading UI (e.g. the assistant's "typing..." bubble) - a full-screen
+  // takeover would hide that bubble instead of letting it coexist with the chat.
+  skipGlobalLoading?: boolean;
+};
+
+async function request<T>(path: string, options: RequestInit = {}, extras: RequestExtras = {}): Promise<T> {
+  const { timeoutMs = ATTEMPT_TIMEOUT_MS, skipGlobalLoading = false } = extras;
   const url = `${API_BASE_URL}${path}`;
   const fetchOptions: RequestInit = {
     ...options,
@@ -55,7 +64,7 @@ async function request<T>(path: string, options: RequestInit = {}, attemptTimeou
   // Every request bumps a shared counter so a single full-screen overlay
   // (GlobalLoadingOverlay) can cover any in-flight fetch app-wide, instead of
   // each screen building its own loading UI.
-  useLoadingStore.getState().start();
+  if (!skipGlobalLoading) useLoadingStore.getState().start();
   try {
     let response: Response | undefined;
     let networkError: unknown;
@@ -64,7 +73,7 @@ async function request<T>(path: string, options: RequestInit = {}, attemptTimeou
     // response (401, 404, ...) means the backend IS reachable, so retrying won't help.
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
       try {
-        response = await fetchWithTimeout(url, fetchOptions, attemptTimeoutMs);
+        response = await fetchWithTimeout(url, fetchOptions, timeoutMs);
         networkError = undefined;
         break;
       } catch (err) {
@@ -97,14 +106,14 @@ async function request<T>(path: string, options: RequestInit = {}, attemptTimeou
     if (response.status === 204) return undefined as T;
     return response.json() as Promise<T>;
   } finally {
-    useLoadingStore.getState().finish();
+    if (!skipGlobalLoading) useLoadingStore.getState().finish();
   }
 }
 
 export const api = {
-  get: <T>(path: string, timeoutMs?: number) => request<T>(path, {}, timeoutMs),
-  post: <T>(path: string, body?: unknown, timeoutMs?: number) =>
-    request<T>(path, { method: 'POST', body: body !== undefined ? JSON.stringify(body) : undefined }, timeoutMs),
-  put: <T>(path: string, body?: unknown, timeoutMs?: number) =>
-    request<T>(path, { method: 'PUT', body: body !== undefined ? JSON.stringify(body) : undefined }, timeoutMs),
+  get: <T>(path: string, extras?: RequestExtras) => request<T>(path, {}, extras),
+  post: <T>(path: string, body?: unknown, extras?: RequestExtras) =>
+    request<T>(path, { method: 'POST', body: body !== undefined ? JSON.stringify(body) : undefined }, extras),
+  put: <T>(path: string, body?: unknown, extras?: RequestExtras) =>
+    request<T>(path, { method: 'PUT', body: body !== undefined ? JSON.stringify(body) : undefined }, extras),
 };

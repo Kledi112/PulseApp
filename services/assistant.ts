@@ -32,12 +32,15 @@ function mapService(data: ServiceResponse): Perk {
   };
 }
 
-// Gemini calls routinely take longer than the default 1.5s fetch timeout used by
-// quick CRUD endpoints, so this gets a much longer per-attempt budget.
-const ASSISTANT_TIMEOUT_MS = 20000;
-
 export async function sendAssistantMessage(text: string): Promise<AssistantMessage> {
-  const result = await api.post<AssistantResponse>('/ai/assistant', { message: text }, ASSISTANT_TIMEOUT_MS);
+  const result = await api.post<AssistantResponse>('/ai/assistant', { message: text }, {
+    // Gemini calls routinely take longer than the default 1.5s fetch timeout used by
+    // quick CRUD endpoints, so this gets a much longer per-attempt budget.
+    timeoutMs: 20000,
+    // The chat screen already shows its own "Assistant is typing..." bubble, so this
+    // skips the app-wide full-screen overlay instead of covering the chat with it.
+    skipGlobalLoading: true,
+  });
   return {
     id: `msg-${Date.now()}`,
     role: 'assistant',

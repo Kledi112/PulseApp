@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { AssistantPerkCard } from '@/components/AssistantPerkCard';
 import { AppText, Input, Screen } from '@/components/ui';
@@ -8,6 +9,47 @@ import { sendAssistantMessage } from '@/services/assistant';
 import { useBundleStore } from '@/store/bundle-store';
 import { Colors, Radii, Spacing } from '@/theme';
 import { AssistantMessage } from '@/types';
+
+function TypingDot({ delay }: { delay: number }) {
+  const opacity = useSharedValue(0.3);
+
+  useEffect(() => {
+    opacity.value = withDelay(delay, withRepeat(withTiming(1, { duration: 400 }), -1, true));
+  }, [delay, opacity]);
+
+  const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  return (
+    <Animated.View
+      style={[
+        { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.textTertiary },
+        style,
+      ]}
+    />
+  );
+}
+
+function TypingBubble() {
+  return (
+    <View
+      style={{
+        alignSelf: 'flex-start',
+        flexDirection: 'row',
+        gap: 4,
+        backgroundColor: Colors.surface,
+        borderRadius: Radii.lg,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm + 2,
+        marginTop: Spacing.sm,
+      }}>
+      <TypingDot delay={0} />
+      <TypingDot delay={150} />
+      <TypingDot delay={300} />
+    </View>
+  );
+}
 
 const INITIAL_MESSAGE: AssistantMessage = {
   id: 'msg-initial',
@@ -66,6 +108,7 @@ export default function AssistantScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: Spacing.lg, gap: Spacing.sm }}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+          ListFooterComponent={typing ? <TypingBubble /> : null}
           renderItem={({ item }) => (
             <View style={{ gap: Spacing.xs }}>
               <View
@@ -98,14 +141,6 @@ export default function AssistantScreen() {
             </View>
           )}
         />
-
-        {typing && (
-          <View style={{ paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xs }}>
-            <AppText variant="caption" color={Colors.textTertiary}>
-              Assistant is typing…
-            </AppText>
-          </View>
-        )}
 
         <View
           style={{

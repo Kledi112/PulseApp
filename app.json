@@ -4,7 +4,7 @@
     "slug": "Pulse-App",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/pulse-app-icon.png",
     "scheme": "pulseapp",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
@@ -12,14 +12,16 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.pulsedemo.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#0d1117",
+        "foregroundImage": "./assets/images/pulse-app-icon.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -30,12 +32,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/pulse-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#0d1117",
+          "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#0d1117"
+            "backgroundColor": "#ffffff"
           }
         }
       ],
@@ -49,6 +51,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cc475608-be8b-46ab-96d8-a70c9cb6d50d"
+      }
+    },
+    "owner": "kledi112"
   }
 }

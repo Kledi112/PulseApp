@@ -37,18 +37,24 @@ export async function loginWithCredentials(email: string, password: string): Pro
   return mapEmployee(me);
 }
 
-// Seeded backend accounts used by the "demo access" buttons on the login screen,
-// so a presenter can get into the app without typing credentials. These must exist
-// in whichever database the demo is run against - see backend/app/db/seed.py.
-const DEMO_EMPLOYEE_CREDENTIALS = { email: 'alice@demo.com', password: 'password123' };
-const DEMO_MANAGER_CREDENTIALS = { email: 'manager@demo.com', password: 'password123' };
-
-export function loginAsDemoEmployee(): Promise<User> {
-  return loginWithCredentials(DEMO_EMPLOYEE_CREDENTIALS.email, DEMO_EMPLOYEE_CREDENTIALS.password);
+function deriveNameFromEmail(email: string): string {
+  const local = email.split('@')[0] || email;
+  return local.charAt(0).toUpperCase() + local.slice(1);
 }
 
-export function loginAsDemoManager(): Promise<User> {
-  return loginWithCredentials(DEMO_MANAGER_CREDENTIALS.email, DEMO_MANAGER_CREDENTIALS.password);
+// Backs the "demo access" form on the login screen - anyone can spin up their own
+// employee or manager account on the fly instead of everyone sharing one seeded
+// login (which made two people's actions on the same account stomp on each other).
+export async function registerForDemo(email: string, password: string, role: 'employee' | 'manager'): Promise<User> {
+  const token = await api.post<TokenResponse>('/auth/register', {
+    name: deriveNameFromEmail(email),
+    email,
+    password,
+    role,
+  });
+  setAuthToken(token.access_token);
+  const me = await api.get<EmployeeResponse>('/employees/me');
+  return mapEmployee(me);
 }
 
 export function logout() {

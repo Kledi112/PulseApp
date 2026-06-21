@@ -1,7 +1,24 @@
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import { useConnectionErrorStore } from '@/store/connection-error-store';
 import { useLoadingStore } from '@/store/loading-store';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
+// Resolves the backend host automatically so the app keeps working when you switch
+// wifi networks: Expo's dev server (Metro) already knows the LAN IP it's reachable
+// at - that's the same IP printed in the CLI/QR code - and exposes it via hostUri.
+// EXPO_PUBLIC_API_URL still wins when explicitly set (e.g. for prod/staging builds).
+function resolveApiBaseUrl(): string {
+  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
+
+  const hostUri = Constants.expoConfig?.hostUri ?? Constants.expoGoConfig?.debuggerHost;
+  const lanHost = hostUri?.split(':')[0];
+
+  if (lanHost && Platform.OS !== 'web') return `http://${lanHost}:8000`;
+
+  return 'http://localhost:8000';
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 let authToken: string | null = null;
 
@@ -116,4 +133,5 @@ export const api = {
     request<T>(path, { method: 'POST', body: body !== undefined ? JSON.stringify(body) : undefined }, extras),
   put: <T>(path: string, body?: unknown, extras?: RequestExtras) =>
     request<T>(path, { method: 'PUT', body: body !== undefined ? JSON.stringify(body) : undefined }, extras),
+  delete: <T>(path: string, extras?: RequestExtras) => request<T>(path, { method: 'DELETE' }, extras),
 };

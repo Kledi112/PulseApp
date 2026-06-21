@@ -17,6 +17,7 @@ from app.schemas.quest import (
     QuestOut,
     SelectWinnerRequest,
 )
+from app.services.quest_rewards import ensure_monthly_rewards
 
 router = APIRouter(prefix="/quests", tags=["quests"])
 
@@ -118,6 +119,8 @@ def get_leaderboard(
     db: Session = Depends(get_db),
     current_employee: Employee = Depends(get_current_employee),
 ):
+    ensure_monthly_rewards(db)
+
     completed = db.query(Quest).filter(Quest.status == "completed").all()
     counts: dict[tuple[str, str, str], int] = {}
 

@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 
+import { EmployeeHeader } from '@/components/EmployeeHeader';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useBundleStore } from '@/store/bundle-store';
@@ -11,7 +12,7 @@ export default function EmployeeTabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        header: () => <EmployeeHeader />,
         tabBarButton: HapticTab,
         tabBarActiveTintColor: Colors.teal,
         tabBarInactiveTintColor: Colors.textTertiary,
@@ -34,12 +35,16 @@ export default function EmployeeTabLayout() {
         options={{ title: 'Quests', tabBarIcon: ({ color }) => <IconSymbol name="flag.fill" color={color} size={24} /> }}
       />
       <Tabs.Screen
+        name="pools"
+        options={{ title: 'Pools', tabBarIcon: ({ color }) => <IconSymbol name="person.2.fill" color={color} size={24} /> }}
+      />
+      <Tabs.Screen
         name="assistant"
         options={{ title: 'Assistant', tabBarIcon: ({ color }) => <IconSymbol name="message.fill" color={color} size={24} /> }}
       />
       <Tabs.Screen
         name="profile"
-        options={{ title: 'Profile', tabBarIcon: ({ color }) => <IconSymbol name="person.fill" color={color} size={24} /> }}
+        options={{ title: 'Profile', href: null, headerShown: false }}
       />
     </Tabs>
   );

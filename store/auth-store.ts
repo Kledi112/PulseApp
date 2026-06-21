@@ -1,13 +1,12 @@
 import { create } from 'zustand';
 
-import { loginAsDemoEmployee, loginAsDemoManager, logout } from '@/services/auth';
+import { logout, registerForDemo } from '@/services/auth';
 import { User } from '@/types';
 
 type AuthState = {
   user: User | null;
   signIn: (user: User) => void;
-  signInAsDemoEmployee: () => Promise<void>;
-  signInAsDemoManager: () => Promise<void>;
+  signUpForDemo: (email: string, password: string, role: 'employee' | 'manager') => Promise<void>;
   signOut: () => void;
   updateProfile: (patch: Partial<User>) => void;
 };
@@ -15,12 +14,8 @@ type AuthState = {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   signIn: (user) => set({ user }),
-  signInAsDemoEmployee: async () => {
-    const user = await loginAsDemoEmployee();
-    set({ user });
-  },
-  signInAsDemoManager: async () => {
-    const user = await loginAsDemoManager();
+  signUpForDemo: async (email, password, role) => {
+    const user = await registerForDemo(email, password, role);
     set({ user });
   },
   signOut: () => {

@@ -9,8 +9,10 @@ from app.api.routers import (
     claims,
     employees,
     manager,
+    perk_pools,
     providers,
     quests,
+    saved_perks,
     services,
 )
 from app.core.config import settings
@@ -38,6 +40,8 @@ app.include_router(quests.router)
 app.include_router(ai.router)
 app.include_router(manager.router)
 app.include_router(claims.router)
+app.include_router(saved_perks.router)
+app.include_router(perk_pools.router)
 
 
 @app.get("/health")

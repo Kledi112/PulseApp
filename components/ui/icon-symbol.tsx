@@ -35,6 +35,7 @@ const MAPPING = {
   'star.fill': 'star',
   'creditcard.fill': 'credit-card',
   'exclamationmark.triangle.fill': 'warning',
+  'person.2.fill': 'group',
 } as IconMapping;
 
 /**

@@ -1,17 +1,20 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 
+import { ClaimCelebration } from '@/components/ClaimCelebration';
 import { ClaimQRModal } from '@/components/ClaimQRModal';
 import { AppText, Button, Card, Input, Screen } from '@/components/ui';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ActiveService } from '@/data/active-services';
 import { strings } from '@/i18n/strings';
-import { Budget, getMyBudget, getMyPerks } from '@/services/active-services';
+import { Budget, getMyBudget, getMyPerks, takePerk } from '@/services/active-services';
+import { getSavedPerks, unsavePerk } from '@/services/saved-perks';
 import { useAuthStore } from '@/store/auth-store';
 import { Colors, Radii, Spacing } from '@/theme';
+import { Perk } from '@/types';
 import { formatCurrency } from '@/utils/currency';
 
 export function ProfileContent({ showHistory = false }: { showHistory?: boolean }) {
@@ -23,16 +26,42 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
   const [history, setHistory] = useState<ActiveService[]>([]);
   const [active, setActive] = useState<ActiveService[]>([]);
   const [budget, setBudget] = useState<Budget | null>(null);
+  const [saved, setSaved] = useState<Perk[]>([]);
   const [qrToken, setQrToken] = useState<string | null>(null);
   const [qrPerkTitle, setQrPerkTitle] = useState<string | undefined>();
+  const [celebratingPerkTitle, setCelebratingPerkTitle] = useState<string | null>(null);
+  const seenClaimedIdsRef = useRef<Set<string> | null>(null);
+
+  const loadSaved = useCallback(() => {
+    getSavedPerks().then(setSaved).catch(() => setSaved([]));
+  }, []);
+
+  const loadHistory = useCallback(() => {
+    getMyPerks('claimed')
+      .then((result) => {
+        setHistory(result);
+        const seen = seenClaimedIdsRef.current;
+        if (seen) {
+          // Comparing against the last fetch lets us notice a perk that someone
+          // claimed at a venue (on a different device) since we last checked -
+          // there's no push/websocket channel for it, so on-focus refetch is how
+          // the app finds out, same as every other screen here.
+          const newlyClaimed = result.find((service) => !seen.has(service.id));
+          if (newlyClaimed) setCelebratingPerkTitle(newlyClaimed.title);
+        }
+        seenClaimedIdsRef.current = new Set(result.map((service) => service.id));
+      })
+      .catch(() => setHistory([]));
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       if (!user || !showHistory) return;
-      getMyPerks('claimed').then(setHistory).catch(() => setHistory([]));
+      loadHistory();
       getMyPerks('active').then(setActive).catch(() => setActive([]));
       getMyBudget().then(setBudget).catch(() => setBudget(null));
-    }, [user, showHistory])
+      loadSaved();
+    }, [user, showHistory, loadHistory, loadSaved])
   );
 
   if (!user) return null;
@@ -68,6 +97,26 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
   const openQr = (service: ActiveService) => {
     setQrToken(service.token);
     setQrPerkTitle(service.title);
+  };
+
+  const handleUnsave = async (perk: Perk) => {
+    setSaved((prev) => prev.filter((p) => p.id !== perk.id));
+    try {
+      await unsavePerk(perk.id);
+    } catch {
+      loadSaved();
+    }
+  };
+
+  const handleTakeSaved = async (perk: Perk) => {
+    try {
+      await takePerk(perk.id);
+      Alert.alert(strings.marketplace.perkTaken, strings.marketplace.perkTakenBody);
+      getMyPerks('active').then(setActive).catch(() => {});
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not reach the backend. Check your connection and try again.';
+      Alert.alert(strings.marketplace.takeFailed, message);
+    }
   };
 
   return (
@@ -131,6 +180,52 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
               </AppText>
             </View>
           </Card>
+        </View>
+      )}
+
+      {showHistory && (
+        <View style={{ marginTop: Spacing.xl, gap: Spacing.sm }}>
+          <AppText variant="subtitle">{strings.profile.savedTitle}</AppText>
+          {saved.length === 0 ? (
+            <AppText variant="body" color={Colors.textSecondary}>
+              {strings.profile.emptySaved}
+            </AppText>
+          ) : (
+            saved.map((perk) => (
+              <Card key={perk.id}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.sm }}>
+                  <View style={{ gap: Spacing.xxs, flex: 1 }}>
+                    <AppText variant="label" numberOfLines={1}>
+                      {perk.title}
+                    </AppText>
+                    <AppText variant="caption" color={Colors.textTertiary}>
+                      {perk.providerName}
+                    </AppText>
+                    <AppText variant="label" color={Colors.teal}>
+                      {formatCurrency(perk.priceAll)}
+                    </AppText>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
+                    <Pressable onPress={() => handleUnsave(perk)} style={{ padding: Spacing.xxs }}>
+                      <IconSymbol name="star.fill" size={20} color={Colors.teal} />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => handleTakeSaved(perk)}
+                      style={{
+                        paddingHorizontal: Spacing.sm,
+                        paddingVertical: Spacing.xs,
+                        borderRadius: Radii.pill,
+                        backgroundColor: Colors.teal,
+                      }}>
+                      <AppText variant="caption" color={Colors.background}>
+                        {strings.common.take}
+                      </AppText>
+                    </Pressable>
+                  </View>
+                </View>
+              </Card>
+            ))
+          )}
         </View>
       )}
 
@@ -212,6 +307,11 @@ export function ProfileContent({ showHistory = false }: { showHistory?: boolean 
       />
 
       <ClaimQRModal visible={qrToken !== null} token={qrToken} title={qrPerkTitle} onClose={() => setQrToken(null)} />
+      <ClaimCelebration
+        visible={celebratingPerkTitle !== null}
+        perkTitle={celebratingPerkTitle ?? undefined}
+        onDismiss={() => setCelebratingPerkTitle(null)}
+      />
     </Screen>
   );
 }

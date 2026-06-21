@@ -6,6 +6,10 @@ from app.models.service import Service
 from app.models.active_service import ActiveService
 from app.models.quest import Quest
 from app.models.quest_entry import QuestEntry
+from app.models.saved_perk import SavedPerk
+from app.models.budget_bonus import BudgetBonus
+from app.models.perk_pool import PerkPool, PerkPoolContribution
+from app.models.quest_reward_distribution import QuestRewardDistribution
 
 __all__ = [
     "BusinessApplication",
@@ -16,4 +20,9 @@ __all__ = [
     "ActiveService",
     "Quest",
     "QuestEntry",
+    "SavedPerk",
+    "BudgetBonus",
+    "PerkPool",
+    "PerkPoolContribution",
+    "QuestRewardDistribution",
 ]

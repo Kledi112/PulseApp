@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.employee import Employee
 from app.models.service import Service
+from app.services.budget_service import get_remaining_budget
 
 KEYWORD_CATEGORY = [
     (["relax", "stress", "calm", "massage", "spa"], "wellness"),
@@ -58,18 +59,24 @@ def ask_assistant(db: Session, employee: Employee, message: str) -> tuple[str, l
         return _keyword_fallback(db, message)
 
     catalog = db.query(Service).filter(Service.active.is_(True)).limit(50).all()
+    remaining_all = get_remaining_budget(db, employee)
 
     try:
         from google import genai
 
         client = genai.Client(api_key=settings.gemini_api_key)
-        catalog_text = "\n".join(f"- {s.title} ({s.category}) at {s.provider_name}: {s.description or ''}" for s in catalog)
+        catalog_text = "\n".join(f"- {s.title} ({s.category}) at {s.provider_name}: {s.price_all} ALL - {s.description or ''}" for s in catalog)
         prompt = (
-            "You are a friendly assistant inside an employee perks app. "
-            "Answer the employee's question and, if relevant, recommend up to 2 perks "
-            "from the list below by their exact title. Keep the reply short (2-3 sentences).\n\n"
-            f"Available perks:\n{catalog_text}\n\n"
-            f"Employee asked: {message}"
+            "You are a concierge-style assistant inside an employee perks app, not just a keyword search. "
+            "Reason about what the employee actually wants and what they can afford, then answer like a "
+            "helpful planner would.\n\n"
+            f"The employee has {remaining_all} ALL left in their budget this month.\n\n"
+            f"Available perks (title, category, provider, price in ALL, description):\n{catalog_text}\n\n"
+            f"Employee asked: {message}\n\n"
+            "If it makes sense, you may combine two or three smaller perks into one small plan that fits "
+            "within their remaining budget (e.g. dinner + a movie for a date night) and mention the combined "
+            "total cost - don't suggest anything that exceeds their remaining budget. Recommend up to 3 perks "
+            "from the list above by their exact title. Keep the reply conversational and short (2-4 sentences)."
         )
         response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
         text = (response.text or "").strip()

@@ -1,50 +1,74 @@
-# Welcome to your Expo app 👋
+# Pulse
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Pulse is an employee engagement and benefits platform built for the **HackJunction Tirana — Perx Challenge**. It turns workplace perks into a personalized, gamified experience through team and individual quests, an AI-powered concierge, a perks marketplace, and social budgeting.
 
-## Get started
+## Key Features
 
-1. Install dependencies
+- **Quests** — Managers create individual, team, or open challenges with rewards and deadlines. Employees compete, climb monthly and quarterly leaderboards, and winners are selected directly from the dashboard.
+- **AI Assistant** — A conversational concierge (powered by Gemini, with a keyword-matching fallback) that recommends perks based on natural-language requests and remaining budget.
+- **Perks Marketplace** — Browse perks by category and take, save, bundle, or pool them.
+- **Perk Pools** — Employees combine portions of their individual budgets to unlock perks they couldn't afford alone, then claim together with a single QR code.
+- **Redemption** — Bundled perks generate a unique QR token, scanned at the venue to confirm the claim.
+- **Manager Dashboard** — Create quests, manage the team, monitor leaderboards, and control the perk catalog and budgets.
 
-   ```bash
-   npm install
-   ```
+## Tech Stack
 
-2. Start the app
+**Frontend**
+- React Native + Expo (Expo Router, file-based navigation)
+- Zustand for state management
+- React Native Reanimated
 
-   ```bash
-   npx expo start
-   ```
+**Backend**
+- FastAPI (Python)
+- PostgreSQL with SQLAlchemy + Alembic migrations
+- JWT authentication
+- Google Gemini API for AI-powered recommendations
 
-In the output, you'll find options to open the app in a
+## Project Structure
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+PulseApp/
+├── app/            # Expo Router screens (employee, manager, and auth flows)
+├── components/     # Shared UI components
+├── services/       # API clients
+├── store/          # Zustand stores
+├── types/          # Shared TypeScript types
+├── theme/          # Design tokens
+└── backend/        # FastAPI service, database models, and migrations
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Getting Started
 
-## Learn more
+### Prerequisites
+- Node.js and npm
+- Docker and Docker Compose (for the backend)
 
-To learn more about developing your project with Expo, look at the following resources:
+### Frontend
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npm install
+npx expo start
+```
 
-## Join the community
+### Backend
 
-Join our community of developers creating universal apps.
+```bash
+cd backend
+cp .env.example .env
+docker-compose up --build
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+On first run, apply database migrations in a second terminal:
+
+```bash
+docker-compose exec api alembic upgrade head
+```
+
+- API: http://localhost:8000
+- Interactive docs: http://localhost:8000/docs
+
+See `backend/RUNNING.md` and `backend/DATABASE.md` for further details on running and extending the backend.
+
+## Built For
+
+[HackJunction Tirana — Perx Challenge](https://tirana.hackjunction.com/challenges/perx)
